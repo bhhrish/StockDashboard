@@ -1,5 +1,16 @@
+import streamlit as st
 import pandas as pd
 import numpy as np
+
+st.cache
+def r2_score(y_true, y_pred):
+    sse = np.sum((y_true - y_pred) ** 2)
+    sst = np.sum((y_true - np.mean(y_true)) ** 2)
+    return 1 - sse / sst    
+
+@st.cache
+def mse(y_true, y_pred):
+    return np.mean((y_true - y_pred) ** 2)
 
 class LinearRegression:
 
@@ -19,11 +30,6 @@ class LinearRegression:
             predictions.append(self._B_0 + self._B_1 * i)
         return np.array(predictions)
 
-    def score(self, X_test, y_test):
-        sse = np.sum((y_test - self.predict(X_test)) ** 2)
-        sst = np.sum((y_test - np.mean(y_test)) ** 2)
-        return 1 - sse / sst
-
 class Node:
     def __init__(self, value=None, threshold=None, left=None, right=None):
         self.threshold = threshold
@@ -41,18 +47,18 @@ class DecisionTreeRegressor:
         num_samples = np.shape(X)[0]
         if num_samples >= self._min_samples_split and depth <= self._max_depth:
             best_split = self._get_best_split(X, y, num_samples)
-            if len(best_split) != 0 and best_split["var_red"] > 0:
-                left_subtree = self._build(best_split["left_values"]['X'], 
-                    best_split["left_values"]['y'], depth + 1)
-                right_subtree = self._build(best_split["right_values"]['X'], 
+            if len(best_split) != 0 and best_split['var_red'] > 0:
+                left_subtree = self._build(best_split['left_values']['X'], 
+                    best_split['left_values']['y'], depth + 1)
+                right_subtree = self._build(best_split['right_values']['X'], 
                     best_split['right_values']['y'], depth + 1)
-                return Node(None, best_split["threshold"],
+                return Node(None, best_split['threshold'],
                             left_subtree, right_subtree)
         return Node(np.mean(y))
     
     def _get_best_split(self, X, y, num_samples):
         best_split = {}
-        max_var_red = -float("inf")
+        max_var_red = -float('inf')
         for threshold in np.unique(X):
             left_values = {'X': [], 'y': []}
             right_values = {'X': [], 'y': []}
@@ -67,10 +73,10 @@ class DecisionTreeRegressor:
                 y, left_y, right_y = y, left_values['y'], right_values['y']
                 curr_var_red = self.get_var_red(y, left_y, right_y)
                 if curr_var_red > max_var_red:
-                    best_split["threshold"] = threshold
-                    best_split["left_values"] = left_values
-                    best_split["right_values"] = right_values
-                    best_split["var_red"] = curr_var_red
+                    best_split['threshold'] = threshold
+                    best_split['left_values'] = left_values
+                    best_split['right_values'] = right_values
+                    best_split['var_red'] = curr_var_red
                     max_var_red = curr_var_red
 
         return best_split

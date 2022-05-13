@@ -43,8 +43,8 @@ def plot_indexes():
                         TICKERS[i][j]['Close'].values[0] >
                         TICKERS[i][j]['Close'].values[-1] \
                             else {'color': '#39AA57'},
-                        hovertemplate='Price: $%{y:.2f}, ' +
-                            'Date: %{x} <extra></extra>'
+                        hovertemplate='Price: $%{y:.2f} at ' +
+                            '%{x} <extra></extra>'
                                 
                 ),
                 row=i + 1, col=j + 1
@@ -59,14 +59,17 @@ def plot_indexes():
     return fig
 
 def main():
-    st.title("Home page title")
+    st.title('Stock Price Dashboard')
     for i in range(2):
         col1, col2 = st.columns(2)
         for j in range(2):
             col_to_use = col1 if j == 0 else col2
+            x = round((100 / TICKERS[i][j]['Close'].values[-2]) * \
+                (TICKERS[i][j]['Close'].values[-1] - TICKERS[i][j]['Close'].\
+                    values[-2]), 2)
             col_to_use.metric(TITLES[i][j], 
             f"${prettify(round(TICKERS[i][j]['Close'].values[-1], 3))}", 
-            f"{round((100 / TICKERS[i][j]['Close'].values[-2]) * (TICKERS[i][j]['Close'].values[-1] - TICKERS[i][j]['Close'].values[-2]), 2)}% today")
+            f"{x}% today")
 
     if st.checkbox('Show 1 month line chart'):
         st.plotly_chart(plot_indexes(), config=PLOT_CONFIG, use_container_width=True)

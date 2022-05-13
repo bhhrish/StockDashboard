@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from models import *
 from sklearn.svm import SVR
-from sklearn.metrics import r2_score, mean_squared_error
+#from sklearn.metrics import r2_score, mse
 from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow import keras
@@ -32,6 +32,7 @@ def plot_actual_predicted(date, y_train, y_train_pred, y_test, y_pred):
         marker={'color': 'lightblue'}, 
         name='Actual',
         showlegend=False,
+        hovertemplate='$%{y:.2f} at %{x}',
         row=1, col=1
     )
     fig.add_scatter(
@@ -41,6 +42,7 @@ def plot_actual_predicted(date, y_train, y_train_pred, y_test, y_pred):
         marker={'color': 'orange'},
         name='Predicted',
         showlegend=False,
+        hovertemplate='$%{y:.2f} at %{x}',
         row=1, col=1
     )
     fig.add_scatter(
@@ -49,6 +51,7 @@ def plot_actual_predicted(date, y_train, y_train_pred, y_test, y_pred):
         mode='lines',
         name='Actual',
         marker={'color': 'lightblue'},
+        hovertemplate='$%{y:.2f} at %{x}',
         row=1, col=2
     )
     fig.add_scatter(
@@ -57,6 +60,7 @@ def plot_actual_predicted(date, y_train, y_train_pred, y_test, y_pred):
         mode='lines',
         name='Predicted',
         marker={'color': 'orange'},
+        hovertemplate='$%{y:.2f} at %{x}',
         row=1, col=2
     )
     fig.update_layout(legend={
@@ -64,15 +68,19 @@ def plot_actual_predicted(date, y_train, y_train_pred, y_test, y_pred):
         'yanchor': 'bottom',
         'y': 1.05,
         'xanchor': 'right',
-        'x': 1}
+        'x': 1},
+        hovermode='x unified'
     )
+    fig.update_xaxes(title_text='Date', 
+        rangebreaks=[{'bounds': ['Sat', 'Mon']}])
+    fig.update_yaxes(title_text='Stock price')
     return fig 
 
 def show_data_size(train_size, test_size):
-    st.sidebar.markdown("**Data Splits**")
-    st.sidebar.write('Train set size')
+    st.sidebar.markdown('**Train Test Split**')
+    st.sidebar.write('Number of training samples')
     st.sidebar.info(train_size)
-    st.sidebar.write('Test set size')
+    st.sidebar.write('Number of testing samples')
     st.sidebar.info(test_size)
 
 def show_metrics(r_sq, mse):
@@ -93,19 +101,21 @@ def linear_regression(symbol, training_ratio):
     X_train, X_test, y_train, y_test = train_test_split(df, train_size)
     model = LinearRegression()
     model.fit(X_train, y_train)
+    y_train_pred = model.predict(X_train)
     y_pred = model.predict(X_test)
     date = df['Date'].values[train_size:]
     show_data_size(X_train.shape[0], X_test.shape[0])
     st.subheader('Model Performance')
     st.plotly_chart(plot_actual_predicted((date, 
         df['Date'].values[:train_size]), y_train, 
-        model.predict(X_train), y_test, y_pred), use_container_width=True)
-    show_metrics((model.score(X_train, y_train), model.score(X_test, y_test)), 
-        (mean_squared_error(y_train, model.predict(X_train)), 
-        mean_squared_error(y_test, y_pred)))
+        model.predict(X_train), y_test, y_pred), config=PLOT_CONFIG, 
+        use_container_width=True)
+    show_metrics((r2_score(y_train, y_train_pred), r2_score(y_test, y_pred)), 
+        (mse(y_train, model.predict(X_train)), 
+        mse(y_test, y_pred)))
 
-#@st.cache
-def run_decision_tree_regression(X_train, y_train, params):
+@st.cache
+def train_decision_tree_regression(X_train, y_train, params):
     model = DecisionTreeRegressor(*params)
     model.fit(X_train, y_train)
     return model
@@ -130,7 +140,7 @@ def decision_tree_regressor(symbol, training_ratio):
         'expanded until all leaves are pure or until all leaves contain less' +
         ' than the minimum samples in internal nodes.')
     max_depth = float('inf') if max_depth == 'None' else max_depth
-    model = run_decision_tree_regression(X_train, 
+    model = train_decision_tree_regression(X_train, 
     y_train, (min_samples_split, max_depth))
     y_pred = model.predict(X_test)
     y_train_pred = model.predict(X_train)
@@ -138,13 +148,13 @@ def decision_tree_regressor(symbol, training_ratio):
     st.subheader('Model Performance')
     st.plotly_chart(plot_actual_predicted((date, 
         df['Date'].values[:train_size]), y_train, y_train_pred, y_test, 
-        y_pred), use_container_width=True)
+        y_pred), config=PLOT_CONFIG, use_container_width=True)
     show_metrics((r2_score(y_train, y_train_pred), r2_score(y_test, y_pred)),
-        (mean_squared_error(y_train, y_train_pred), 
-        mean_squared_error(y_test, y_pred)))
+        (mse(y_train, y_train_pred), 
+        mse(y_test, y_pred)))
 
 @st.cache
-def run_random_forest_regressor(X_train, y_train, params):
+def train_random_forest_regressor(X_train, y_train, params):
     model = RandomForestRegressor()
     model.fit(X_train, y_train)
     return model
@@ -176,7 +186,7 @@ def random_forest_regressor(symbol, training_ratio):
     'number of trees in the forest. Though this may yield sub-optimal results.'
     )
     if st.button('Run Random Forest Regressor!'):
-        model = run_random_forest_regressor(X_train, 
+        model = train_random_forest_regressor(X_train, 
         y_train, (n_estimators, min_samples_split, max_depth))
         y_pred = model.predict(X_test)
         y_train_pred = model.predict(X_train)
@@ -185,11 +195,11 @@ def random_forest_regressor(symbol, training_ratio):
         st.plotly_chart(plot_actual_predicted((date, 
             df['Date'].values[:train_size]),
             y_train, y_train_pred, y_test, y_pred),
-            use_container_width=True)
+            config=PLOT_CONFIG, use_container_width=True)
         show_metrics((r2_score(y_train, y_train_pred), 
             r2_score(y_test, y_pred)),
-            (mean_squared_error(y_train, y_train_pred), 
-            mean_squared_error(y_test, y_pred)))
+            (mse(y_train, y_train_pred), 
+            mse(y_test, y_pred)))
 
 def svr(symbol, training_ratio):
     _, df = get_data(symbol)
@@ -214,10 +224,10 @@ def svr(symbol, training_ratio):
     st.plotly_chart(plot_actual_predicted((date, 
         df['Date'].values[:train_size]),
         y_train, y_train_pred, y_test, y_pred),
-        use_container_width=True)
+        config=PLOT_CONFIG, use_container_width=True)
     show_metrics((r2_score(y_train, y_train_pred), r2_score(y_test, y_pred)),
-        (mean_squared_error(y_train, y_train_pred), 
-        mean_squared_error(y_test, y_pred)))
+        (mse(y_train, y_train_pred), 
+        mse(y_test, y_pred)))
 
 def knn_regressor(symbol, training_ratio):
     _, df = get_data(symbol)
@@ -232,7 +242,7 @@ def knn_regressor(symbol, training_ratio):
         model = KNeighborsRegressor(i)
         fitted = model.fit(X_train, y_train)
         y_pred = model.predict(X_test) 
-        mses.append(mean_squared_error(y_test, y_pred))
+        mses.append(mse(y_test, y_pred))
     k = np.argmin(mses) + 1
     k = st.slider('k', 1, 50, int(k), help='k determines the number of neare' +
     'st neighbours to consider in the "voting" process.' + f'k = {int(k)}' +
@@ -246,10 +256,10 @@ def knn_regressor(symbol, training_ratio):
     st.plotly_chart(plot_actual_predicted((date, 
         df['Date'].values[:train_size]),
         y_train, y_train_pred, y_test, y_pred),
-        use_container_width=True)
+        config=PLOT_CONFIG, use_container_width=True)
     show_metrics((r2_score(y_train, y_train_pred), r2_score(y_test, y_pred)),
-        (mean_squared_error(y_train, y_train_pred), 
-        mean_squared_error(y_test, y_pred)))
+        (mse(y_train, y_train_pred), 
+        mse(y_test, y_pred)))
 
 def create_dataset(dataset, look_back):
     X, y = [], []
@@ -259,7 +269,7 @@ def create_dataset(dataset, look_back):
     return np.array(X), np.array(y)
 
 @st.cache
-def run_lstm(df, train_size):
+def train_lstm(df, train_size):
     train_data = df['Close'].values[:train_size]
     scaler = MinMaxScaler()
     train_data = train_data.reshape(-1, 1)
@@ -277,7 +287,6 @@ def run_lstm(df, train_size):
     model.add(layers.Dropout(0.2))
     model.add(layers.Dense(25))
     model.add(layers.Dense(1, activation='linear'))
-    model.add(layers.Activation('ReLU'))
     model.compile(optimizer='adam', loss='mean_squared_error', 
         metrics=['accuracy'])
     early_stopping = EarlyStopping(
@@ -306,7 +315,7 @@ def lstm(symbol, training_ratio):
     train_size = int(training_ratio * len(df))
     show_data_size(train_size, len(df) - train_size)
     if train_size < 100:
-        st.warning('The current dataset is too small for LSTM to yield ' +
+        st.warning('The selected dataset is too small for LSTM to yield ' +
         'optimal results!')
     st.subheader('Hyperparameters')
     st.markdown('**Note:** hyperparameter tuning has been disabled as it is '
@@ -326,7 +335,7 @@ def lstm(symbol, training_ratio):
     col2.slider('Batch size', 1, train_size, 500, help='The number of sample' +
     's that will be passed through to the network at one time.', disabled=True)
     y_train, y_train_pred, y_true, y_pred, loss, val_loss, time_steps = \
-        run_lstm(df, train_size)
+        train_lstm(df, train_size)
     _, test_date = create_dataset(df['Date'].values[:train_size].
         reshape(-1, 1), time_steps)
     _, train_date = create_dataset(df['Date'].values[train_size:].
@@ -339,7 +348,7 @@ def lstm(symbol, training_ratio):
         y=loss,
         mode='lines',
         name='Train',
-        hovertemplate=None
+        hovertemplate='Loss: %{y:.2f}<extra></extra>'
 
     ))
     fig.add_trace(go.Scatter(
@@ -347,34 +356,41 @@ def lstm(symbol, training_ratio):
         y=val_loss,
         mode='lines',
         name='Test',
-        hovertemplate=None
+        hovertemplate='Loss: %{y:.2f}<extra></extra>'
     ))
-    fig.update_layout(hovermode='x unified')
+    fig.update_layout(
+        hovermode='x',
+        title='Loss vs. Epochs',
+        xaxis_title='Epochs',
+        yaxis_title='Loss'
+    )
     st.subheader('Model Performance')
     st.write('The number of epochs is set to 50, though early stopping ' +
     '(with patience = 5) has been implemented to reduce overfitting. We ' +
-    f'can see from the plot below that the model only took {len(loss)} epochs!')
-    st.plotly_chart(fig, use_container_width=True)
+    f'can see from the plot below that the model only took {len(loss)} ' + 
+    'epochs!')
+    st.plotly_chart(fig, config=PLOT_CONFIG, use_container_width=True)
     st.plotly_chart(plot_actual_predicted((train_date, test_date), 
         y_train.flatten(), y_train_pred.flatten(), y_true.flatten(), 
-        y_pred.flatten()), use_container_width=True)
+        y_pred.flatten()), config=PLOT_CONFIG, use_container_width=True)
     show_metrics((r2_score(y_train, y_train_pred), r2_score(y_true, y_pred)),
-        (mean_squared_error(y_train, y_train_pred), 
-        mean_squared_error(y_true, y_pred)))
+        (mse(y_train, y_train_pred), 
+        mse(y_true, y_pred)))
 
 def main():
-    st.title('Predictor page title')
+    st.title('Stock Price Predictor')
     st.write('Please hide the sidebar to see better ("unsquished") plots.')
     ticker_list_asx, ticker_list_nasdaq = setup()
-    symbol = st.sidebar.selectbox('Codes', ticker_list_asx + 
-        ticker_list_nasdaq)
+    options = ticker_list_asx + ticker_list_nasdaq
+    sq2_idx = 0 if 'SQ2' not in options else options.index('SQ2')
+    symbol = st.sidebar.selectbox('Tickers', options, sq2_idx)
     if symbol in ticker_list_asx:
         symbol += '.AX'
     model = st.sidebar.selectbox('Models', ['Linear Regression', 
                 'Decision Tree Regression', 'Random Forest Regression', 
                 'Support Vector Regression', 'k-Nearest Neighbour Regression', 
                 'LSTM'])
-    training_ratio = st.sidebar.slider('Training size ratio', 5, 95, 85, 1)
+    training_ratio = st.sidebar.slider('Training size (in %)', 5, 95, 85, 1)
     models = {
        'Linear Regression': linear_regression,
        'Decision Tree Regression': decision_tree_regressor,
