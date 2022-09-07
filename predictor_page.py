@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 from models import *
 from sklearn.svm import SVR
-#from sklearn.metrics import r2_score, mse
 from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow import keras
