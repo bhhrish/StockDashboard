@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-st.cache
+@st.cache
 def r2_score(y_true, y_pred):
     sse = np.sum((y_true - y_pred) ** 2)
     sst = np.sum((y_true - np.mean(y_true)) ** 2)
