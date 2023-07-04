@@ -189,7 +189,6 @@ def fetch_past_financials(code, ipo_year):
 @st.cache_data
 def plot_balance_sheet(code, _ticker):
     balance_sheet = _ticker.balance_sheet()
-    print('Columns', balance_sheet.columns)
     physical_assets = balance_sheet["NetPPE"].tolist()[-1]
     receivables = balance_sheet["Receivables"].tolist()[-1]
     inventory = balance_sheet["Inventory"].tolist()[-1]
