@@ -94,7 +94,7 @@ def show_metrics(r_sq, mse):
     col2.info(mse[1])
 
 def linear_regression(symbol, training_ratio):
-    _, df = get_data(symbol)
+    _, df, _ = get_data(symbol, None)
     df.fillna(df.mean(numeric_only=True), inplace=True)
     train_size = int(training_ratio * len(df))
     X_train, X_test, y_train, y_test = train_test_split(df, train_size)
@@ -113,14 +113,14 @@ def linear_regression(symbol, training_ratio):
         (mse(y_train, model.predict(X_train)), 
         mse(y_test, y_pred)))
 
-@st.cache
+@st.cache_resource
 def train_decision_tree_regression(X_train, y_train, params):
     model = DecisionTreeRegressor(*params)
     model.fit(X_train, y_train)
     return model
 
 def decision_tree_regressor(symbol, training_ratio):
-    _, df = get_data(symbol)
+    _, df, _ = get_data(symbol, None)
     df.fillna(df.mean(numeric_only=True), inplace=True)
     train_size = int(training_ratio * len(df))
     X_train, X_test, y_train, y_test = train_test_split(df, train_size)
@@ -152,14 +152,14 @@ def decision_tree_regressor(symbol, training_ratio):
         (mse(y_train, y_train_pred), 
         mse(y_test, y_pred)))
 
-@st.cache
+@st.cache_resource
 def train_random_forest_regressor(X_train, y_train, params):
     model = RandomForestRegressor()
     model.fit(X_train, y_train)
     return model
 
 def random_forest_regressor(symbol, training_ratio):
-    _, df = get_data(symbol)
+    _, df, _ = get_data(symbol, None)
     df.fillna(df.mean(numeric_only=True), inplace=True)
     train_size = int(training_ratio * len(df))
     X_train, X_test, y_train, y_test = train_test_split(df, train_size)
@@ -201,7 +201,7 @@ def random_forest_regressor(symbol, training_ratio):
             mse(y_test, y_pred)))
 
 def svr(symbol, training_ratio):
-    _, df = get_data(symbol)
+    _, df, _ = get_data(symbol, None)
     df.fillna(df.mean(numeric_only=True), inplace=True)
     train_size = int(training_ratio * len(df))
     X_train, X_test, y_train, y_test = train_test_split(df, train_size)
@@ -229,7 +229,7 @@ def svr(symbol, training_ratio):
         mse(y_test, y_pred)))
 
 def knn_regressor(symbol, training_ratio):
-    _, df = get_data(symbol)
+    _, df, _ = get_data(symbol, None)
     df.fillna(df.mean(numeric_only=True), inplace=True)
     train_size = int(training_ratio * len(df))
     X_train, X_test, y_train, y_test = train_test_split(df, train_size)
@@ -267,7 +267,7 @@ def create_dataset(dataset, look_back):
         y.append(dataset[i + look_back, 0])
     return np.array(X), np.array(y)
 
-@st.cache
+@st.cache_resource
 def train_lstm(df, train_size):
     train_data = df['Close'].values[:train_size]
     scaler = MinMaxScaler()
@@ -309,7 +309,7 @@ def train_lstm(df, train_size):
         history.history['loss'], history.history['val_loss'], time_steps)
 
 def lstm(symbol, training_ratio):
-    _, df = get_data(symbol)
+    _, df, _ = get_data(symbol, None)
     df.fillna(df.mean(numeric_only=True), inplace=True)
     train_size = int(training_ratio * len(df))
     show_data_size(train_size, len(df) - train_size)
@@ -381,7 +381,7 @@ def main():
     st.write('Please hide the sidebar to see better ("unsquished") plots.')
     ticker_list_asx, ticker_list_nasdaq = setup()
     options = ticker_list_asx + ticker_list_nasdaq
-    sq2_idx = 0 if 'SQ2' not in options else options.index('SQ2')
+    sq2_idx = 0 if 'DMP' not in options else options.index('DMP')
     symbol = st.sidebar.selectbox('Tickers', options, sq2_idx)
     if symbol in ticker_list_asx:
         symbol += '.AX'

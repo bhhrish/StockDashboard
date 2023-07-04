@@ -28,7 +28,7 @@ PLOT_CONFIG = {
     'scrollZoom': True,
 }
 
-st.cache(allow_output_mutation=True)
+@st.cache_data
 def plot_indexes(): 
     fig = make_subplots(rows=2, cols=2, subplot_titles=[
         TITLES[i][j] for i in range(2) for j in range(2)])
@@ -67,9 +67,10 @@ def main():
             x = round((100 / TICKERS[i][j]['Close'].values[-2]) * \
                 (TICKERS[i][j]['Close'].values[-1] - TICKERS[i][j]['Close'].\
                     values[-2]), 2)
+            diff = round(TICKERS[i][j]['Close'].values[-1] - TICKERS[i][j]['Close'].values[-2], 2)
             col_to_use.metric(TITLES[i][j], 
             f"${prettify(round(TICKERS[i][j]['Close'].values[-1], 3))}", 
-            f"{x}% today")
+            f"{'+' if diff > 0 else ''}{diff} ({x}%)")
 
     if st.checkbox('Show 1 month line chart'):
         st.plotly_chart(plot_indexes(), config=PLOT_CONFIG, use_container_width=True)
