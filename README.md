@@ -20,7 +20,7 @@ To run the dashboard, follow these steps:
    pip install -r requirements.txt
    ```
 2. Update the web driver to the latest version compatible with your system and place it in the `drivers` directory.
-3. Set the `USE_CHROME` variable to `False` in the `main.py` file if you are not using the Google Chrome browser.
+3. Set the `USE_CHROME` variable to `False` in the `visualiser_page.py` file if you are not using the Google Chrome browser.
 4. Run the following command to start the dashboard:
   ```
   streamlit run main.py
