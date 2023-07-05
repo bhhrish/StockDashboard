@@ -165,10 +165,10 @@ def fetch_past_financials(code, ipo_year):
     year_len = (
         10
         if datetime.datetime.today().year - ipo_year + 1 > 10
-        else datetime.datetime.today().year - ipo_year + 1
+        else datetime.datetime.today().year - ipo_year
     )
     for i in raw_table[1:]:
-        temp = i.rsplit(" ", maxsplit=10)
+        temp = i.rsplit(" ", maxsplit=year_len)
         data[temp[0]] = temp[-year_len:]
 
     data = pd.DataFrame(data, index=year_index[-year_len:])
